@@ -1,4 +1,5 @@
 import cgi
+import string
 
 class HDBDict(object):
 	"""
@@ -7,12 +8,18 @@ class HDBDict(object):
 	def __init__(self):
 		self._voc = {}
 
-	def escape(self, string):
-		string = cgi.escape(string)
-		string = string.replace('"', "'")
-		string = string.replace('?', "\\?") # reserved wild card character
-		string = string.replace('*', '\\*') # reserved wild card character
-		return string
+	def escape(self, text):
+		# remove all non printable characters
+		# we had a case where there were ASCII control characters in the UMLS files
+		# these will be removed
+		text = filter(string.printable.__contains__, text) 
+
+		# Escape the HTML special characters
+		text = cgi.escape(text)
+		text = text.replace('"', "'")
+		text = text.replace('?', "\\?") # reserved wild card character
+		text = text.replace('*', '\\*') # reserved wild card character
+		return text
 
 
 	def addEntity(self, name, category):
