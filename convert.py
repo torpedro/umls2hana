@@ -139,7 +139,7 @@ if __name__ == '__main__':
 				#
 				#
 				#
-				output_file = 'output/umls-%d.xml' % (chunkId)
+				output_file = 'xml-output/umls-%d.xml' % (chunkId)
 				print " * Writing to HANA dictionary (%s)..." % (output_file)
 				hdbdict = HDBDict()
 				for cui in concepts:
