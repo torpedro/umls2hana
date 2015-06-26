@@ -7,7 +7,10 @@ import gc
 if __name__ == '__main__':
 	usage = "usage: %prog [options] umlspath"
 	parser = OptionParser(usage=usage)
+	parser.add_option("-o", "--output", dest="output", default="xml-output")
 	(options, args) = parser.parse_args()
+
+	output_path = options.output
 
 	if len(args) != 1:
 		parser.error("UMLS-Path is missing!")
@@ -133,13 +136,14 @@ if __name__ == '__main__':
 							"preferred_terms": []
 						}
 
-					concepts[cui]["types"].add(typ[3])
+					# concepts[cui]["types"].add(typ[3]) # Named types
+					concepts[cui]["types"].add(typ[1]) # T-Types
 
 
 				#
 				#
 				#
-				output_file = 'xml-output/umls-%d.xml' % (chunkId)
+				output_file = os.path.join(output_path, 'umls-%d.xml' % (chunkId))
 				print " * Writing to HANA dictionary (%s)..." % (output_file)
 				hdbdict = HDBDict()
 				for cui in concepts:
