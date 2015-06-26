@@ -1,10 +1,12 @@
-#!/usr/bin/python
+#!/bin/python
+from optparse import OptionParser
 import sys
 import os
 import re
 import getpass
-from optparse import OptionParser
 import pyhdb
+
+from umls2hana.semanticnetwork import *
 
 
 """
@@ -26,59 +28,13 @@ CREATE ROW TABLE "UMLS"."SEMANTIC_TYPE_RELATIONS" (
 
 
 
-def readSemanticTypes(cursor, path, table):
-	print " * Semantic Types"
-
-	print "   * Truncating..."
-	cursor.execute('TRUNCATE TABLE %s' % (table))
-
-	print "   * Read types from %s..." % (path)
-	types = []
-	with open(path, 'r') as fh:
-		for line in fh:
-			typ = line.split('|')
-			types.append((typ[1], typ[2]))
-
-	print "   * Insert types into %s..." % (table)
-	for tid, name in sorted(types, key=lambda x: x[0]):
-		sql = 'INSERT INTO %s VALUES (\'%s\', \'%s\')' % (table, tid, name)
-		cursor.execute(sql);
-
-def readSemanticRelations(cursor, path, table):
-	print " * Semantic Relations"
-
-	print "   * Truncating..."
-	cursor.execute('TRUNCATE TABLE %s' % (table))
-
-	print "   * Read relations from %s..." % (relation_file)
-	relations = []
-	with open(relation_file, 'r') as f:
-		reg = re.compile(r'([^>]+)\|(.+)\|(.+)\|')
-
-		for line in f.readlines():
-			match = reg.search(line)
-			if match:
-				relations.append(match.groups())
-
-	print "   * Insert relations into %s..." % (relation_table)
-
-	for rel in relations:
-		values = ["'" + s + "'" for s in rel]
-		statement = 'INSERT INTO %s VALUES (%s)' % (relation_table, ','.join(values))
-		cursor.execute(statement)
-
-
-
-
 
 if __name__ == '__main__':
-	print ""
-	usage = "usage: %prog [options] input_path"
+	usage = "usage: %prog [options] input_folder"
 	parser = OptionParser(usage=usage)
 	parser.add_option("-s", "--server", dest="server", default="localhost", help="Address of the HANA server")
 	parser.add_option("-p", "--port", dest="port", default="30015")
 	parser.add_option("-u", "--user", dest="user", default="SYSTEM")
-	# parser.add_option("-o", "--out", dest="out")
 	(options, args) = parser.parse_args()
 
 	if len(args) < 1:

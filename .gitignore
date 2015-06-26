@@ -1,3 +1,4 @@
+xml-output/
 *.pyc
 compile/config.sh
 compile-all.sh

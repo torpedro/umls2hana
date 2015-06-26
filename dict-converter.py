@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/bin/python
 from optparse import OptionParser
-from HDBDict import HDBDict
+from umls2hana.HDBDict import HDBDict
 import os
 import gc
 
