@@ -5,18 +5,16 @@ import os
 import gc
 
 if __name__ == '__main__':
-	usage = "usage: %prog [options] umlspath"
+	usage = "usage: %prog [options] umls_path output_path"
 	parser = OptionParser(usage=usage)
-	parser.add_option("-o", "--output", dest="output", default="xml-output")
 	(options, args) = parser.parse_args()
 
-	output_path = options.output
-
-	if len(args) != 1:
-		parser.error("UMLS-Path is missing!")
+	if len(args) < 2:
+		parser.error("Not enough arguments given!")
 
 
 	umlspath = args[0]
+	output_path = args[1]
 
 	metapath = os.path.join(umlspath, 'META')
 	if not os.path.isdir(metapath):
