@@ -1,4 +1,5 @@
 xml-output/
+csv/
 *.pyc
 compile/config.sh
 compile-all.sh

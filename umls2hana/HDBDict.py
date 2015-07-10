@@ -1,14 +1,20 @@
 import cgi
 import string
+import pyhdb
+import sqlhelper
 
 class HDBDict(object):
 	"""
-		_voc maps categories to entities which have a set of variants assigned
+		__voc maps categories to entities which have a set of variants assigned
+		__synonyms
 	"""
 	def __init__(self):
-		self._voc = {}
+		self.__voc = {}
+		self.__synonyms = set()
 
-	def escape(self, text):
+
+	@staticmethod
+	def escape(text):
 		# remove all non printable characters
 		# we had a case where there were ASCII control characters in the UMLS files
 		# these will be removed
@@ -22,25 +28,33 @@ class HDBDict(object):
 		return text
 
 
-	def addEntity(self, name, category):
+	def __addSynonym(self, pref_term, variant):
+		tup = (HDBDict.escape(pref_term), HDBDict.escape(variant))
+		self.__synonyms.add(tup)
+
+
+	def addEntity(self, pref_term, category):
 		category = category.upper()
-		name = name.strip()
+		pref_term = pref_term.strip()
 
-		if not category in self._voc:
-			self._voc[category] = {}
+		if not category in self.__voc:
+			self.__voc[category] = {}
 
-		if not name in self._voc[category]:
-			self._voc[category][name] = set()
+		if not pref_term in self.__voc[category]:
+			self.__voc[category][pref_term] = set()
 
-		self._voc[category][name].add(name)
+		self.__voc[category][pref_term].add(pref_term)
+
+		self.__addSynonym(pref_term, pref_term)
 
 
-	def addVariant(self, name, category, term):
+	def addVariant(self, pref_term, category, variant):
 		category = category.upper().strip()
-		name = name.strip()
-		term = term.strip()
+		pref_term = pref_term.strip()
+		variant = variant.strip()
 		try:
-			self._voc[category][name].add(term)
+			self.__voc[category][pref_term].add(variant)
+			self.__addSynonym(pref_term, variant)
 		except Exception, e:
 			print e
 
@@ -50,16 +64,16 @@ class HDBDict(object):
 		f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
 		f.write('<dictionary xmlns="http://www.sap.com/ta/4.0">\n')
 
-		for category in self._voc:
-			f.write('  <entity_category name="' + self.escape(category) + '">\n')
+		for category in self.__voc:
+			f.write('  <entity_category name="' + HDBDict.escape(category) + '">\n')
 
-			for name in self._voc[category]:
+			for name in self.__voc[category]:
 
 				try:
 					estr = ''
-					estr += '    <entity_name standard_form="' + self.escape(name) + '">\n'
-					for variant in self._voc[category][name]:
-						estr += '      <variant name="' + self.escape(variant) + '"/>\n'
+					estr += '    <entity_name standard_form="' + HDBDict.escape(name) + '">\n'
+					for variant in self.__voc[category][name]:
+						estr += '      <variant name="' + HDBDict.escape(variant) + '"/>\n'
 					estr += '    </entity_name>\n'
 					f.write(estr)
 				except Exception, e:
@@ -68,3 +82,43 @@ class HDBDict(object):
 			f.write('  </entity_category>\n')
 		f.write('</dictionary>\n')
 		f.close() 		
+
+
+	
+	def writeSynonymsToFile(self, output_file):
+		f = open(output_file, 'w')
+
+		for pref_term, variant in self.__synonyms:
+			pref_term = pref_term.replace("'", "''")
+			variant = variant.replace("'", "''")
+			line = '"%s";"%s"\n' % (pref_term, variant)
+			f.write(line)
+
+		f.close() 		
+
+
+
+	def insertSynonymsIntoTable(self, connection, tablename):
+		cursor = connection.cursor()
+
+		i = 0
+		for pref_term, variant in self.__synonyms:
+			pref_term = pref_term.replace("'", "''")
+			variant = variant.replace("'", "''")
+			sql = "INSERT INTO %s VALUES('%s', '%s')" % (tablename, pref_term, variant)
+			try:
+				cursor.execute(sql)
+			except pyhdb.exceptions.DatabaseError, e:
+				s = str(e)
+				if "too large for column" in s:
+					print "Too Large"
+				else:
+					raise e
+
+			i += 1
+			if i % 1000 == 0:
+				print "   * Committing chunk"
+				connection.commit()
+				sqlhelper.mergeDelta(connection, tablename)
+
+		connection.commit()

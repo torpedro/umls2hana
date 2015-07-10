@@ -1,26 +1,76 @@
 #!/bin/python
 from optparse import OptionParser
 from umls2hana.HDBDict import HDBDict
+import umls2hana.sqlhelper as sqlhelper
 import os
-import gc
+import getpass
+import pyhdb
 
 if __name__ == '__main__':
-	usage = "usage: %prog [options] umls_path output_path"
+	usage = "usage: %prog [options] umls_path"
 	parser = OptionParser(usage=usage)
+	parser.add_option("-c", action="store_true", dest="create_csv", help="Flag.")
+	parser.add_option("-x", action="store_true", dest="create_xml", help="Flat.")
+
+	parser.add_option("-o", "--output", dest="output", help="Output path for XML dictionaries", default="./")
+	# parser.add_option("-s", "--server", dest="server", default="localhost", help="Address of the HANA server")
+	# parser.add_option("-p", "--port", dest="port", default="30015")
+	# parser.add_option("-u", "--user", dest="user", default="SYSTEM")
+	# parser.add_option("-t", "--table", dest="table", default="SYNONYMS")
+	# parser.add_option("-d", "--schema", dest="schema", default="UMLS")
+	# synonymsTable = "\"%s\".\"%s\"" % (options.schema, options.table)
 	(options, args) = parser.parse_args()
 
-	if len(args) < 2:
+
+	if len(args) < 1:
 		parser.error("Not enough arguments given!")
 
-
 	umlspath = args[0]
-	output_path = args[1]
+	output_path = options.output
+	doCreateXMLDictionaries = options.create_xml
+	doCreateSynonymCSV = options.create_csv
 
+	if doCreateXMLDictionaries:
+		print " * Converts dictionaries to XML into path: %s" % (output_path)
+
+	if doCreateSynonymCSV:
+		print " * Converts CSV files with synonyms into path: %s" % (output_path)
+
+	# if doCreateSynonymCSV:
+	# 	print " * Configured to insert vocabulary into HANA table: %s" % (synonymsTable)
+
+
+	# 	print " * Opening connection to HANA (%s:%s)..." % (options.server, options.port)
+
+	# 	print " * What is the password for your HANA user? (User: %s)" % (options.user)
+	# 	password = getpass.getpass()
+
+	# 	try:
+	# 		connection = pyhdb.connect(
+	# 			host=options.server,
+	# 			port=options.port,
+	# 			user=options.user,
+	# 			password=password
+	# 		)
+	# 		cursor = connection.cursor()
+
+	# 		print " * Dropping and Creating table %s" % (synonymsTable)
+	# 		sqlhelper.dropTable(connection, synonymsTable)
+	# 		sqlhelper.createSynonymTable(connection, synonymsTable)
+
+	# 	except pyhdb.exceptions.DatabaseError, e:
+	# 		print str(e)
+	# 		parser.error("Connection to HANA failed!")
+
+	if not doCreateXMLDictionaries and not doCreateSynonymCSV:
+		parser.error("\nYou have to either specify that XML files should be created (-x) or that the synonyms should be outputted to csv (-c). You can also specify both.")
+
+
+	######################################################
+	# Validating Metathesaurus Path
 	metapath = os.path.join(umlspath, 'META')
 	if not os.path.isdir(metapath):
 		parser.error("Given UMLS-Path is invalid!")
-
-
 
 	conceptsFilepath = os.path.join(metapath, 'MRCONSO.RRF')
 	typesFilepath = os.path.join(metapath, 'MRSTY.RRF')
@@ -32,6 +82,8 @@ if __name__ == '__main__':
 		parser.error('Can\'t find types file (META/MRSTY.RRF) in UMLS-Path!')
 
 
+
+	######################################################
 	# Number of concepts per dictionary
 	dictChunkSize = 500000
 	chunkId = 1
@@ -138,15 +190,12 @@ if __name__ == '__main__':
 					concepts[cui]["types"].add(typ[1]) # T-Types
 
 
-				#
-				#
-				#
-				output_file = os.path.join(output_path, 'umls-%d.xml' % (chunkId))
-				print " * Writing to HANA dictionary (%s)..." % (output_file)
+
+
 				hdbdict = HDBDict()
 				for cui in concepts:
 					if len(concepts[cui]["types"]) == 0:
-						print cui
+						print "No type for concept", cui
 						break
 
 					for typ in concepts[cui]["types"]:
@@ -165,8 +214,22 @@ if __name__ == '__main__':
 						for term in concepts[cui]["terms"]:
 							hdbdict.addVariant(pref_term, typ, term)
 
-				hdbdict.writeToFile(output_file)
+
+				if doCreateXMLDictionaries:
+					output_file = os.path.join(output_path, 'umls-%d.xml' % (chunkId))
+					print " * Writing to HANA dictionary (%s)..." % (output_file)
+					hdbdict.writeToFile(output_file)
+
+				if doCreateSynonymCSV:
+					output_file = os.path.join(output_path, 'umls-synonyms-%d.csv' % (chunkId))
+					control_file = output_file + '.ctl'
+					print " * Writing into CSV file (%s)..." % (output_file)
+					hdbdict.writeSynonymsToFile(output_file)
+					sqlhelper.createCSVImportControlFile(control_file, '"UMLS"."SYNONYMS"', output_file)
+
+
 				chunkId += 1
+				break
 
 
 
