@@ -46,6 +46,8 @@ def mergeDelta(connection, tablename):
 IMPORT DATA
 INTO TABLE S0004108322.USERS
 FROM '/dropbox/S0004108322/USERS.CSV'
+FIELDS DELIMITED BY ';'
+OPTIONALLY ENCLOSED BY '"'
 ERROR LOG '/dropbox/S0004108322/USERS.ERR'
 
 [SQL]
@@ -55,10 +57,13 @@ IMPORT FROM <control_file>
 """
 def createCSVImportControlFile(control_path, table, csv_path):
 	error_log = "%s.err" % (os.path.abspath(control_path))
+	
 	fh = open(control_path, 'w')
 	fh.write("IMPORT DATA\n")
 	fh.write("INTO TABLE %s\n" % (table))
 	fh.write("FROM '%s'\n" % (os.path.abspath(csv_path)))
+	fh.write("FIELDS DELIMITED BY ';'\n")
+	fh.write("OPTIONALLY ENCLOSED BY '\"'\n")
 	fh.write("ERROR LOG '%s'\n" % (error_log))
 	fh.close()
 

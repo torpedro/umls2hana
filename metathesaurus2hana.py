@@ -229,7 +229,7 @@ if __name__ == '__main__':
 
 
 				chunkId += 1
-				break
+				# break
 
 
 
