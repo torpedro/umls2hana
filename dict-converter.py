@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
 	metapath = os.path.join(umlspath, 'META')
 	if not os.path.isdir(metapath):
-		parser.error("Given UMLS-Path is invalid!")
+		parser.error("Given UMLS-Path is invalid! (has no 'META' subfolder)")
 
 
 
