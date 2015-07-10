@@ -70,7 +70,7 @@ if __name__ == '__main__':
 	# Validating Metathesaurus Path
 	metapath = os.path.join(umlspath, 'META')
 	if not os.path.isdir(metapath):
-		parser.error("Given UMLS-Path is invalid!")
+		parser.error("Given UMLS-Path is invalid! (has no 'META' subfolder)")
 
 	conceptsFilepath = os.path.join(metapath, 'MRCONSO.RRF')
 	typesFilepath = os.path.join(metapath, 'MRSTY.RRF')

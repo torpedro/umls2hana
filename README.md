@@ -6,7 +6,7 @@ This repository contains software to convert the [Metathesaurus of UMLS](http://
 
 ### UMLS Metathesaurus
 
-To use the Metathesaurus you first have to download and extract it from [here](http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html). To use the vocabulary in HANA you have to convert it into a XML-Dictionary. You can do this by using our converter:
+To use the Metathesaurus you first have to download and extract it from [here](http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html). To use the vocabulary in HANA you have to convert it into a XML-Dictionary. You need to point our converter to your downloaded version of the UMLS Metathesaurus. Right now the script only needs the files `META/MRCONSO.RRF` and `META/MRSTY.RRF` to build the dictionary. You can do this by using our converter:
 
 ```
 python dict-convert.py /umls/path/
@@ -20,15 +20,16 @@ The [UMLS Semantic Network](http://semanticnetwork.nlm.nih.gov/) contains a list
 Using this script you can import the semantic types and relations into your HANA instance. For this you only need the *SRDEF.html* and *SRSTRE1.html* files.
 
 ```
-python semantic-network-parser.py /path/to/semantic/files/
+Usage: semantic-network-parser.py [options] input_folder
 
-# Usage: semantic-network-parser.py [options] input_folder
-# 
-# Options:
-#   -h, --help            show this help message and exit
-#   -s SERVER, --server=SERVER
-#                        Address of the HANA server
-#   -p PORT, --port=PORT  
-#   -u USER, --user=USER 
+Options:
+  -h, --help            show this help message and exit
+  -s SERVER, --server=SERVER
+                       Address of the HANA server
+  -p PORT, --port=PORT  
+  -u USER, --user=USER 
 ```
 
+```
+python semantic-network-parser.py ~/umls-semantic-network/
+```

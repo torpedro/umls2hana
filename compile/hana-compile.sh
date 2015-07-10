@@ -1,6 +1,6 @@
 #!/bin/bash
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-echo $DIR
+
 CONFIG_FILE=${DIR}/config.sh
 # check the config file
 if [ ! -f ${CONFIG_FILE} ]; then
@@ -37,6 +37,7 @@ fi
 echo ""
 echo " * Compiling xml file: ${INPUT_XML}"
 echo " * Output dictionary file: ${OUTPUT_DICT_FILENAME}"
+echo " * Output directory: ${LANG_DIR}"
 
 # Setup execution variables
 OUTPUT_FILE=$LANG_DIR/$OUTPUT_DICT_FILENAME
