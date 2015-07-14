@@ -15,9 +15,15 @@ python dict-convert.py /umls/path/
 
 ### UMLS Semantic Network
 
-The [UMLS Semantic Network](http://semanticnetwork.nlm.nih.gov/) contains a list of the semantic types and a list of relations between these types. All related files can be downloaded [here](http://semanticnetwork.nlm.nih.gov/Download/index.html).
+The [UMLS Semantic Network](http://semanticnetwork.nlm.nih.gov/) contains a list of the semantic types and a list of relations between these types. All related files can be downloaded [here](http://semanticnetwork.nlm.nih.gov/Download/index.html). We also use the [UMLS Semantic Groups](http://semanticnetwork.nlm.nih.gov/SemGroups/).
 
-Using this script you can import the semantic types and relations into your HANA instance. For this you only need the *SRDEF.html* and *SRSTRE1.html* files.
+Using this script you can import the semantic types and relations into your HANA instance. For this you only need the *SRDEF.html* and *SRSTRE1.html* files from the Semantic Network and the UMLS Semantic Group file (*SemGroup.txt*).
+
+These tables will be created and filled:
+	
+	* "UMLS"."SEMANTIC_TYPES"
+	* "UMLS"."SEMANTIC_TYPE_RELATIONS"
+	* "UMLS"."SEMANTIC_GROUPS"
 
 ```
 Usage: semantic-network-parser.py [options] input_folder

@@ -9,26 +9,6 @@ import pyhdb
 from umls2hana.semanticnetwork import *
 
 
-"""
-CREATE SCHEMA "UMLS";
-
-CREATE ROW TABLE "UMLS"."SEMANTIC_TYPES" (
-	"TID" NVARCHAR(4) CS_STRING,
-	"NAME" NVARCHAR(128) CS_STRING,
-	UNIQUE ("TID")
-);
-
-CREATE ROW TABLE "UMLS"."SEMANTIC_TYPE_RELATIONS" (
-	"TYPE1" NVARCHAR(4) CS_STRING,
-	"REL" NVARCHAR(4) CS_STRING,
-	"TYPE2" NVARCHAR(4) CS_STRING,
-	UNIQUE ("TYPE1", "REL", "TYPE2")
-);
-"""
-
-
-
-
 if __name__ == '__main__':
 	usage = "usage: %prog [options] input_folder"
 	parser = OptionParser(usage=usage)
@@ -50,13 +30,26 @@ if __name__ == '__main__':
 	port = int(options.port)
 	user = options.user
 
-	type_table = '"UMLS"."SEMANTIC_TYPES"'
-	relation_table = '"UMLS"."SEMANTIC_TYPE_RELATIONS"'
+	tables = {
+		"types": '"UMLS"."SEMANTIC_TYPES"',
+		"relations": '"UMLS"."SEMANTIC_TYPE_RELATIONS"',
+		"groups": '"UMLS"."SEMANTIC_GROUPS"'
+	}
 
-	type_file = os.path.join(path, 'SRDEF.html')
-	relation_file = os.path.join(path, 'SRSTRE1.html')
+	src_files = {
+		"types": os.path.join(path, 'SRDEF.html'),
+		"relations": os.path.join(path, 'SRSTRE1.html'),
+		"groups": os.path.join(path, 'SemGroups.txt')
+	}
 
+	files = {}
 
+	# Check if files exists
+	for key, path in src_files.iteritems():
+		if os.path.exists(path):
+			files[key] = path
+		else:
+			files[key] = None
 
 	##################################
 	##################################
@@ -79,16 +72,30 @@ if __name__ == '__main__':
 		cursor = connection.cursor()
 
 	except pyhdb.exceptions.DatabaseError, e:
-		print '[Error] invalid username or password'
-		sys.exit(-1)
+		parser.error("invalid username or password")
 
 
+	##################################
+	##################################
+	##################################
+	print " * Creating the schema and tables..."
+	createUMLSSchemaAndTables(connection)
 
-	readSemanticTypes(cursor, type_file, type_table)
-	readSemanticRelations(cursor, relation_file, relation_table)
+	if files['types']:
+		readSemanticTypes(cursor, files['types'], tables['types'])
+	else: print " * Types file not found! Skipping types. (%s)" % (src_files['types'])
 
 
-		
+	if files['relations']:
+		readSemanticRelations(cursor, files['relations'], tables['relations'])
+	else: print " * Relations file not found! Skipping relations. (%s)" % (src_files['relations'])
+
+
+	if files['groups']:
+		readSemanticGroups(cursor, files['groups'], tables['groups'])
+	else: print " * Groups file not found! Skipping groups. (%s)" % (src_files['groups'])
+	
+	
 	connection.commit()
 	connection.close()
 	print " * Done"
