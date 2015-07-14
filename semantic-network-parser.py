@@ -86,9 +86,9 @@ if __name__ == '__main__':
 	else: print " * Types file not found! Skipping types. (%s)" % (src_files['types'])
 
 
-	if files['relations']:
-		readSemanticRelations(cursor, files['relations'], tables['relations'])
-	else: print " * Relations file not found! Skipping relations. (%s)" % (src_files['relations'])
+	# if files['relations']:
+	# 	readSemanticRelations(cursor, files['relations'], tables['relations'])
+	# else: print " * Relations file not found! Skipping relations. (%s)" % (src_files['relations'])
 
 
 	if files['groups']:

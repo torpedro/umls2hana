@@ -21,9 +21,10 @@ Using this script you can import the semantic types and relations into your HANA
 
 These tables will be created and filled:
 	
-	* "UMLS"."SEMANTIC_TYPES"
-	* "UMLS"."SEMANTIC_TYPE_RELATIONS"
-	* "UMLS"."SEMANTIC_GROUPS"
+* "UMLS"."SEMANTIC_TYPES"
+* "UMLS"."SEMANTIC_TYPE_RELATIONS"
+* "UMLS"."SEMANTIC_GROUPS"
+
 
 ```
 Usage: semantic-network-parser.py [options] input_folder

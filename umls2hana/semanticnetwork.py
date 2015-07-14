@@ -22,8 +22,10 @@ def createUMLSSchemaAndTables(connection):
 	# Create Table SEMANTIC_TYPES
 	sql = """
 	CREATE ROW TABLE "UMLS"."SEMANTIC_TYPES" (
+		"ID" INT,
 		"TID" NVARCHAR(4) CS_STRING,
 		"NAME" NVARCHAR(128) CS_STRING,
+		UNIQUE ("ID"),
 		UNIQUE ("TID")
 	)"""
 	__createIfNotExists(cursor, sql)
@@ -31,10 +33,10 @@ def createUMLSSchemaAndTables(connection):
 	# Create Table SEMANTIC_TYPE_RELATIONS
 	sql = """
 	CREATE ROW TABLE "UMLS"."SEMANTIC_TYPE_RELATIONS" (
-		"TYPE1" NVARCHAR(4) CS_STRING,
-		"REL" NVARCHAR(4) CS_STRING,
-		"TYPE2" NVARCHAR(4) CS_STRING,
-		UNIQUE ("TYPE1", "REL", "TYPE2")
+		"TYPE1_ID" INT,
+		"REL_ID" INT,
+		"TYPE2_ID" INT,
+		UNIQUE ("TYPE1_ID", "REL_ID", "TYPE2_ID")
 	)
 	"""
 	__createIfNotExists(cursor, sql)
@@ -42,10 +44,12 @@ def createUMLSSchemaAndTables(connection):
 	# Create Table SEMANTIC_GROUPS
 	sql = """
 	CREATE ROW TABLE "UMLS"."SEMANTIC_GROUPS" (
-		"GROUP_KEY" NVARCHAR(4) CS_STRING,
-		"GROUP_NAME" NVARCHAR(64) CS_STRING,
-		"TID" NVARCHAR(4) CS_STRING,
-		UNIQUE ("GROUP_KEY", "GROUP_NAME", "TID")
+		"ID" INT,
+		"KEY" NVARCHAR(4) CS_STRING,
+		"NAME" NVARCHAR(64) CS_STRING,
+		"TYPE_ID" INT,
+		UNIQUE ("ID", "TYPE_ID"),
+		UNIQUE ("KEY", "TYPE_ID")
 	)
 	"""
 	__createIfNotExists(cursor, sql)
@@ -68,8 +72,9 @@ def readSemanticTypes(cursor, path, table):
 			types.append((typ[1], typ[2]))
 
 	print "   * Inserting types into %s..." % (table)
-	for tid, name in sorted(types, key=lambda x: x[0]):
-		sql = 'INSERT INTO %s VALUES (\'%s\', \'%s\')' % (table, tid, name)
+	for tid_str, name in sorted(types, key=lambda x: x[0]):
+		tid_int = int(tid_str[1:])
+		sql = 'INSERT INTO %s VALUES (%d, \'%s\', \'%s\')' % (table, tid_int, tid_str, name)
 		cursor.execute(sql);
 
 	# cursor.execute('MERGE DELTA OF %s' % (table))
@@ -94,8 +99,10 @@ def readSemanticRelations(cursor, path, table):
 
 	print "   * Inserting relations into %s..." % (table)
 
-	for rel in relations:
-		values = ["'" + s + "'" for s in rel]
+	for relation in relations:
+		# crop the beginning 'T' from the id
+		values = [s[1:] for s in relation]
+
 		statement = 'INSERT INTO %s VALUES (%s)' % (table, ','.join(values))
 		cursor.execute(statement)
 
@@ -110,19 +117,30 @@ def readSemanticGroups(cursor, path, table):
 
 	print "   * Reading groups from %s..." % (path)
 	groups = []
+	group_keys = {}
 	with open(path, 'r') as f:
-		reg = re.compile(r'([^>]+)\|(.+)\|(.+)\|')
+		reg = re.compile(r'([^>]+)\|(.+)\|(.+)\|(.+)')
 
 		for line in f.readlines():
 			match = reg.search(line)
 			if match:
-				groups.append(match.groups())
+				group = match.groups()
+				groups.append(group)
+
+				if group[0] not in group_keys:
+					group_keys[group[0]] = len(group_keys)
+
+
 
 	print "   * Inserting groups into %s..." % (table)
-
-	for grp in groups:
-		values = ["'" + s + "'" for s in grp]
-		statement = 'INSERT INTO %s VALUES (%s)' % (table, ','.join(values))
+	for group in groups:
+		row = [
+			str(group_keys[group[0]]),
+			"'" + group[0] + "'",
+			"'" + group[1] + "'",
+			group[2][1:] # cropped TID
+		]
+		statement = 'INSERT INTO %s VALUES (%s)' % (table, ','.join(row))
 		cursor.execute(statement)
 
 	# cursor.execute('MERGE DELTA OF %s' % (table))
